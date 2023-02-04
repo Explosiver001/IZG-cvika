@@ -1,0 +1,246 @@
+/**
+\mainpage Izg lab06.
+
+\section zadani Zadání cvičení 06 do předmětu IZG.
+
+\tableofcontents
+
+\image html src/result.svg "Výstup cvičení" width=1000
+
+Vašim úkolem je naprogramovovat vykreslování toho, co vám na cvičení zadá cvičí.
+Budete programovat pouze v jazyce GLSL.
+Všechna kreslená data budou procedurální - vypočítaná za běhu.
+Cílem cvičení je seznámit se s jazykem GLSL v OpenGL / Vulkan.
+
+\section co Které soubory editujete:
+shaders/student.glsl
+
+\section teorie Teorie
+GLSL je jazyk pro gramování shaderů.
+Shader a shader program je kód běžící na grafických kartách.
+Účelem shaderů je hýbat s objekty, obarvovat je, vytvářet efekty, počítat fyziku, ...
+Shaderů je několik druhů:
+<ul>
+<li> <b>Vertex Shader</b> - slouží pro práci s vrcholy (vertexy). Obvykle násobí vrcholy maticemi.
+<li> <b>Fragment Shader</b> - též známý jako pixel shader. Slouží pro práci s fragmenty. Obvykle je obarvuje.
+<li> Geometry Shader - pracuje s primitivy.
+<li> Teselační Shadery - dva shadery sloužící pro teselování primitiv.
+<li> Compute Shadery - pro obecné výpočty, třeba fyziky.
+<li> Další, nestandardní shadery, různá rozšíření (raytracing, primitive shadery ...)
+</ul>
+
+\image html src/rendering_pipeline.svg "Zobrazovací řetězec / grafická karta" width=1600
+
+\code{.cpp}
+// Pseodokód reprezentující grafickou kartu
+
+struct InVertex{
+  uint gl_VertexID;// vestavěná v jazyce GLSL - pořadové číslo vrcholu
+  VertexAttribute attribs[16];// volitelné atributy pro uživatele
+}
+
+struct OutVertex{
+  vec4 gl_Position;// vestavěná v jazyce GLSL - pozice vrcholu v clip-space
+  VertexAttribute attribs[16];// volitelné atributy pro uživatele
+}
+
+struct Triangle{
+  OutVertex vertices[3];
+}
+
+Triangle assemblyTriangle(int triangleOffset){
+  Triangle triangle;
+  for(int i=0;i<3;++i){ // smyčka přes vrcholy trojúhelníku
+    InVertex inVertex  = assemblyVertex(triangleOffset+i); // sestavení vrcholu a případného načtení dat z GPU
+    triangle.vertices[i] = call(vertexShader,inVertex); // spuštění vertex shaderu nad vrcholy
+  }
+  return triangle;
+}
+
+void drawTriangles(uint nofVertices){
+  for(int t=0;t<nofVertices;t+=3){// smyčka přes všechny vrcholy
+    Triangle triangle = assemblyTriangle(t); // sestaví trojúhelník
+
+    InFragments*fragments = nullptr;
+    int nofFragments = 0;
+    rasterize(fragments,nofFragments,triangle); // rasterize triangle
+
+    for(int  i=0;i<nofFragments;++i)
+      OutFragment outFragment = call(fragmentShader,fragments[i]);
+      writeTo(frameBuffer,outFragment);
+    
+  }
+}
+\endcode
+
+
+\section jak Jak na to:
+Archiv obsahuje zkopilované binárky pro Linux a pro Windows (izg_lab06_linux.bin, izg_lab06_windows.exe).<br>
+Pokud vám fungují, není potřeba nic kompilovat!<br>
+Pokud je nemůžete použít, je potřeba cvičení zkompilovat, viz \ref comp.<br>
+Aplikace vykresluje trojúhelníky (volá se příkaz glDrawArrays).<br>
+A vyvolává se vertex a fragment shader v souboru shaders/student.glsl <br>
+Soubor student.glsl obsahuje pomocí preprocesoru vytyčené sekce vertex a fragment shaderu.<br>
+Vaším úkolem je vykreslit zadání, které určí cvičící.<br>
+Máte k dispozici pouze číslo vrcholu: "gl_VertexID".<br>
+Na základě tohoto čísla vytvořte/vypočítejte vrcholy a barvy trojúhelníků tak, aby se vykreslil požadovaný objekt.<br>
+Inspirujte se přiloženými shadery, které vykreslují různé příklady (složka shaders/).<br>
+Informace k jazyce GLSL najdete ve specifikaci: <a href="https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf">GLSL</a><br>
+Když uděláte chybu, vyskočí message box s chybou.<br>
+Pamatujte, vertex shader se pouští pro každý vrchol trojúhelníků, jeho cílem je rozmístit vrcholy.<br>
+Fragment shader se pouští nad každým fragmentem. Měl by počítat barvu.<br>
+Aplikace se pokouší vykreslit velké množství trojúhelníků, vám stačí pouze pár, zbylé můžete "zdegenerovat" do nuly (gl_Position=vec4(0)).<br>
+
+\section spousteni Spouštění
+
+Aplikace akceptuje několik argumentů příkazové řádky, pro jejich výpis použijte parametr <b> -h </b>
+- <b>\-\-shader shaders/box.glsl</b> vybere zobrazovací shader
+- <b>\-\-triangles 30</b> počet trojúhelníků, který se bude kreslit
+- <b>\-\-version "300 es"</b> verze GLSL možná budete potřebovat u Intel GPU
+- <b>a další...</b><br>
+Vyzkoušejte si
+\code{.sh}
+./izg_lab06_linux.bin --shader shaders/00_empty.glsl 
+./izg_lab06_linux.bin --shader shaders/01_triangle.glsl 
+./izg_lab06_linux.bin --shader shaders/02_triangle3D.glsl 
+./izg_lab06_linux.bin --shader shaders/03_function.gls 
+./izg_lab06_linux.bin --shader shaders/04_vectors.glsl 
+./izg_lab06_linux.bin --shader shaders/05_array.glsl 
+./izg_lab06_linux.bin --shader shaders/06_box.glsl 
+./izg_lab06_linux.bin --shader shaders/07_fullScreenQuad.glsl 
+./izg_lab06_linux.bin --shader shaders/08_fragCoord.glsl 
+./izg_lab06_linux.bin --shader shaders/09_fragCoord3D.glsl 
+./izg_lab06_linux.bin --shader shaders/10_attribs.glsl 
+./izg_lab06_linux.bin --shader shaders/11_uv.glsl 
+./izg_lab06_linux.bin --shader shaders/12_chess.glsl 
+./izg_lab06_linux.bin --shader shaders/13_japanTexture.glsl 
+./izg_lab06_linux.bin --shader shaders/14_japanFlag.glsl 
+./izg_lab06_linux.bin --shader shaders/15_two_materials.glsl 
+./izg_lab06_linux.bin --shader shaders/16_time.glsl 
+./izg_lab06_linux.bin --shader shaders/17_korea.glsl 
+./izg_lab06_linux.bin --shader shaders/18_sphere.glsl 
+./izg_lab06_linux.bin --shader shaders/19_house.glsl 
+./izg_lab06_linux.bin --shader shaders/student.glsl 
+\endcode
+
+\section ovladani Ovládání
+Program se ovládá pomocí myši:
+- stisknuté levé tlačítko myši + pohyb myší - rotace kamery
+- stisknuté pravé tlačítko myši + pohyb myší - přiblížení kamery
+- stiknuté prostření tlačítko myši + pohyb myší - posun kamery do boků
+
+\section priklady Příklady
+
+\subsection e00 00_empty.glsl
+\image html src/00.png "" width=500
+\include{lineno} shaders/00_empty.glsl
+
+\subsection e01 01_triangle.glsl
+\image html src/01.png "" width=500
+\include{lineno} shaders/01_triangle.glsl
+
+\subsection e02 02_triangle3D.glsl
+\image html src/02.png "" width=500
+\include{lineno} shaders/02_triangle3D.glsl
+
+\subsection e03 03_function.glsl
+\image html src/03.png "" width=500
+\include{lineno} shaders/03_function.glsl
+
+\subsection e04 04_vectors.glsl
+\image html src/04.png "" width=500
+\include{lineno} shaders/04_vectors.glsl
+
+\subsection e05 05_array.glsl
+\image html src/05.png "" width=500
+\include{lineno} shaders/05_array.glsl
+
+\subsection e06 06_box.glsl
+\image html src/06.png "" width=500
+\include{lineno} shaders/06_box.glsl
+
+\subsection e07 07_fullScreenQuad.glsl
+\image html src/07.png "" width=500
+\include{lineno} shaders/07_fullScreenQuad.glsl
+
+
+\subsection e08 08_fragCoord.glsl
+\image html src/08.png "" width=500
+\include{lineno} shaders/08_fragCoord.glsl
+
+\subsection e09 09_fragCoord3D.glsl
+\image html src/09.png "" width=500
+\include{lineno} shaders/09_fragCoord3D.glsl
+
+\subsection e10 10_attribs.glsl
+\image html src/10.png "" width=500
+\include{lineno} shaders/10_attribs.glsl
+
+\subsection e11 11_uv.glsl
+\image html src/11.png "" width=500
+\include{lineno} shaders/11_uv.glsl
+
+\subsection e12 12_chess.glsl
+\image html src/12.png "" width=500
+\include{lineno} shaders/12_chess.glsl
+
+\subsection e13 13_japanTexture.glsl
+\image html src/13.png "" width=500
+\include{lineno} shaders/13_japanTexture.glsl
+
+\subsection e14 14_japanFlag.glsl
+\image html src/14.png "" width=500
+\include{lineno} shaders/14_japanFlag.glsl
+
+\subsection e15 15_two_materials.glsl
+\image html src/15.png "" width=500
+\include{lineno} shaders/15_two_materials.glsl
+
+\subsection e16 16_time.glsl
+\image html src/16.png "" width=500
+\include{lineno} shaders/16_time.glsl
+
+\subsection e17 17_korea.glsl
+\image html src/17.png "" width=500
+\include{lineno} shaders/17_korea.glsl
+
+\subsection e18 18_sphere.glsl
+\image html src/18.png "" width=500
+\include{lineno} shaders/18_sphere.glsl
+
+\subsection e19 19_house.glsl
+\image html src/19.png "" width=500
+\include{lineno} shaders/19_house.glsl
+
+\section comp Kompilace:
+Toto dělejte pouze tehdy, pokud nemůžete použít přiložené binárky!<br>
+Cvičení byl testován na Ubuntu 20.04, Visual Studio 2019.
+Byl testován na NVIDIA a AMD grafických kartách, Intel.
+Cvičení využívá build systém <a href="https://cmake.org/">CMAKE</a>.
+CMake je program, který na základně konfiguračních souborů "CMakeLists.txt"
+vytvoří "makefile" v daném vývojovém prostředí.
+Dokáže generovat makefile pro Linux, mingw, solution file pro Microsoft
+Visual Studio, a další.<br>
+Postup Linux:
+\code{.sh}
+# stáhnout projekt
+unzip izg_lab06.zip -d izg_lab06
+cd izg_lab06/build
+cmake ..
+make -j8
+./izg_lab06
+./izg_lab06 -h
+./izg_lab06 --tests
+\endcode
+Posup na Windows:
+-# stáhnout cvičení
+-# rozbalit cvičení
+-# jděte do složky build/ 
+-# ve složce build pusťte cmake-gui ..
+-# pokud nevíte jak, tak pusťte cmake-gui a nastavte "Where is the source code:" na složku se cvičením (obsahuje CMakeLists.txt)
+-# a "Where to build the binaries: " na složku build
+-# configure
+-# generate
+-# Otevřete vygenerovnou Microsoft Visual Studio Solution soubor.
+
+*/

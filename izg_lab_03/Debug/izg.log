@@ -1,0 +1,4 @@
+﻿cl : příkazový řádek warning D9035: Možnost Gm je zastaralá a v příští verzi se odebere.
+  student.cpp
+C:\Users\mnova\Desktop\izg_lab_03\src\student.cpp(120,54): warning C4244: return: double se převádí na int; může dojít ke ztrátě dat.
+  izg.vcxproj -> C:\Users\mnova\Desktop\izg_lab_03\Debug\izg.exe

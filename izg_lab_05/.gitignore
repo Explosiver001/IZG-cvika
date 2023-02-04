@@ -1,0 +1,5 @@
+build/
+Debug/
+izg_lab_04
+*.o
+.vs/
